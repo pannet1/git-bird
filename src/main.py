@@ -160,7 +160,7 @@ def sync(mock=False):
     # Report
     sections = [
         ("Pending Clones", "Remote repos not present locally", pending_clones,
-         lambda repo, path: f"   - {repo['owner']}/{repo['name']} -> {path}"),
+         lambda item: f"   - {item[0]['owner']}/{item[0]['name']} -> {item[1]}"),
         ("WIP Folders", "Local folders not on GitHub & no .git", no_git_local,
          lambda path: f"   - {path}"),
         ("Incomplete Repos", "Local folders on GitHub but no .git", incomplete_local,

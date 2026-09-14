@@ -2,7 +2,10 @@ import os
 import tempfile
 import shutil
 from pathlib import Path
-from main import sanitize_lang, is_version_controlled, get_repo_path
+try:
+    from main import sanitize_lang, is_version_controlled, get_repo_path
+except ImportError:
+    from src.main import sanitize_lang, is_version_controlled, get_repo_path
 
 def test_sanitize_lang():
     assert sanitize_lang(None) == 'unknown'

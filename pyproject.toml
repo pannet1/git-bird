@@ -9,6 +9,8 @@ requires-python = "==3.12.*"
 dependencies = []
 
 [project.scripts]
+git-bird = "src.main:sync"
+# sync kept for backwards compat but shadows /usr/bin/sync (coreutils) — prefer git-bird
 sync = "src.main:sync"
 
 [tool.uv]
