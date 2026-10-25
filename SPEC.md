@@ -7,12 +7,10 @@ Sync GitHub repositories for the authenticated user and their organizations to a
 1. **Get Authenticated User**: Fetch username via `gh api user --jq ".login"` or fallback to API.
 2. **Get Organizations**: List orgs the user belongs to via `gh api users/<user>/orgs --jq ".[].login"`.
 3. **List Repositories**:
-   - For user: `gh repo list <user> --limit 1000 --json name,primaryLanguage,fork`
-   - For each org: `gh repo list <org> --limit 1000 --json name,primaryLanguage,fork`
-4. **Local Path Structure**: `~/programs/<primaryLanguage>/<gitDomain>/<owner>/<repoName>/`
-   - Example: `~/programs/python/github.com/pannet1/Scripts`
-   - `<primaryLanguage>`: Repo dominant language (from GitHub API, default `unknown` if null)
-     - **Sanitization**: Convert to lowercase, replace spaces with hyphens (e.g., "Jupyter Notebook" → "jupyter-notebook")
+   - For user: `gh repo list <user> --limit 1000 --json name,isFork,isArchived`
+   - For each org: `gh repo list <org> --limit 1000 --json name,isFork,isArchived`
+4. **Local Path Structure**: `~/programs/<gitDomain>/<owner>/<repoName>/`
+   - Example: `~/programs/github.com/pannet1/Scripts`
    - `<gitDomain>`: Fixed as `github.com`
    - `<owner>`: User or organization name
 5. **Sync Rules**:

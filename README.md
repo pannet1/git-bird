@@ -7,9 +7,9 @@ A command-line tool that synchronizes your GitHub repositories (for the authenti
 `git-bird` answers two questions:
 
 1. **What's missing?** Remote repos that exist on GitHub but haven't been cloned locally yet.
-2. **What's stale?** Local repo directories that are orphaned, dirty (uncommitted changes), archived, or duplicated across language folders.
+2. **What's stale?** Local repo directories that are orphaned, dirty (uncommitted changes), or archived.
 
-It then performs automated actions where safe (cloning missing repos, removing archived ones) and prints manual resolution steps where needed (duplicate names, dirty repos).
+It then performs automated actions where safe (cloning missing repos, removing archived ones) and prints manual resolution steps where needed (dirty repos).
 
 ## Requirements
 
@@ -48,21 +48,20 @@ python -m src.main --mock # dry-run
 
 ## Local Directory Structure
 
-Repos are organized by their GitHub primary language:
+Repos live in a flat, language-agnostic layout:
 
 ```
-~/programs/<primaryLanguage>/github.com/<owner>/<repoName>/
+~/programs/github.com/<owner>/<repoName>/
 ```
 
 **Example:**
 
 ```
-~/programs/python/github.com/pannet1/git-bird/
-~/programs/javascript/github.com/pannet1/make-videos/
-~/programs/unknown/github.com/org-name/some-repo/
+~/programs/github.com/pannet1/git-bird/
+~/programs/github.com/pannet1/make-videos/
+~/programs/github.com/org-name/some-repo/
 ```
 
-- `<primaryLanguage>` — derived from the repo's `primaryLanguage` field on GitHub. Sanitized to lowercase with non-alphanumeric characters replaced by hyphens (e.g. `"Jupyter Notebook"` → `jupyter-notebook`). Falls back to `unknown` when no language is set.
 - `<owner>` — the GitHub username or organization name.
 - `<repoName>` — the repository name.
 
@@ -87,15 +86,10 @@ After scanning, the tool prints a categorized report. Sections with **zero findi
 | 4 | **Dirty Repos** | Local git repos with uncommitted changes. |
 | 5 | **Orphaned Repos** | Local git repos (with `.git`) that no longer exist on GitHub. |
 | 6 | **Deleted Repos** | Local directories whose GitHub repo is archived. |
-| 7 | **Duplicate Repo Names** | The same repo name exists in different language folders — requires manual resolution. |
 
 ### Management Advice
 
-A condensed advice section summarizes actions you should take for each non-empty problematic category (WIP, incomplete, dirty, orphaned, duplicates). If everything is clean, it prints an "all synced" status.
-
-### Duplicate Resolution
-
-When duplicate repo names are detected in different language folders, the tool prints detailed `mkdir -p ... && mv ...` commands to move the misplaced folder to the correct location. These are **not executed automatically** — you must review and run them yourself, then re-run sync.
+A condensed advice section summarizes actions you should take for each non-empty problematic category (WIP, incomplete, dirty, orphaned). If everything is clean, it prints an "all synced" status.
 
 ## Mock Mode
 
@@ -105,9 +99,9 @@ When duplicate repo names are detected in different language folders, the tool p
 
 1. **Fetch identity** — gets the authenticated user via `gh api user`.
 2. **Enumerate owners** — the user plus all organizations they belong to (`gh api user/orgs`).
-3. **List remote repos** — `gh repo list <owner>` for each owner, fetching `name`, `primaryLanguage`, `isFork`, `isArchived`.
+3. **List remote repos** — `gh repo list <owner>` for each owner, fetching `name`, `isFork`, `isArchived`.
 4. **Map ideal paths** — computes the expected local directory for each remote repo.
-5. **Scan local filesystem** — globs `~/programs/*/`github.com/*/*`` to discover existing local directories.
+5. **Scan local filesystem** — globs `~/programs/github.com/*/*` to discover existing local directories.
 6. **Classify** — compares remote and local, categorizing each into one of the report buckets above.
 7. **Report & act** — prints the categorized report, then executes safe automated actions (clones, archive removals) in live mode.
 
@@ -127,4 +121,4 @@ git-bird/
 
 - Only supports GitHub (via `gh CLI`). Not designed for other git hosts.
 - Repo listing is limited to 1000 repos per owner via `gh repo list --limit 1000`.
-- Duplicate resolution and dirty-repo handling require **manual intervention** — the tool reports but does not auto-fix these.
+- Dirty-repo handling requires **manual intervention** — the tool reports but does not auto-fix these.
