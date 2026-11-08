@@ -27,7 +27,11 @@ def get_repos(owner):
 def get_repo_path(repo, owner):
     return Path.home() / "programs" / "github.com" / owner / repo['name']
 
-def sync(mock=False):
+def sync(mock=None):
+    if mock is None:
+        import sys
+        mock = "--mock" in sys.argv
+
     user = get_user()
     if not user:
         print("Error: Could not get authenticated user. Please run 'gh auth login'.")
@@ -149,29 +153,21 @@ def sync(mock=False):
         print("* Status: All remote repositories are currently synced locally.")
     print("="*50)
 
-    # Execution
+    # Execution (automatic cloning and deletion are disabled to prevent accidental duplicate repos or deletions)
     if archived_local:
+        print("\nArchived Repos (Automatic deletion disabled):")
         for path in archived_local:
             cmd = f"rm -rf {path}"
-            if mock:
-                print(f"[MOCK] {cmd} (Archived on GitHub)")
-            else:
-                print(f"Removing archived repo: {path}...")
-                subprocess.run(cmd, shell=True)
+            prefix = "[MOCK]" if mock else "[SKIPPED]"
+            print(f"{prefix} {cmd} (Archived on GitHub)")
 
     if pending_clones:
-        print("\nActions:")
+        print("\nPending Clones (Automatic cloning disabled):")
         for repo, path in pending_clones:
             clone_url = f"https://github.com/{repo['owner']}/{repo['name']}.git"
             cmd = f"git clone {clone_url} {path}"
-            if mock:
-                print(f"[MOCK] {cmd}")
-            else:
-                print(f"Cloning {repo['owner']}/{repo['name']}...")
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                subprocess.run(cmd, shell=True)
+            prefix = "[MOCK]" if mock else "[SKIPPED]"
+            print(f"{prefix} {cmd}")
 
 if __name__ == "__main__":
-    import sys
-    mock_mode = "--mock" in sys.argv
-    sync(mock=mock_mode)
+    sync()
