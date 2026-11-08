@@ -5,10 +5,13 @@ Sync GitHub repositories for the authenticated user and their organizations to a
 
 ## Workflow
 1. **Get Authenticated User**: Fetch username via `gh api user --jq ".login"` or fallback to API.
-2. **Get Organizations**: List orgs the user belongs to via `gh api users/<user>/orgs --jq ".[].login"`.
+2. **Get Owners**:
+   - Authenticated user
+   - Organizations via `gh api user/orgs --jq ".[].login"`
+   - Any local owner directories found in `~/programs/github.com/` (e.g. `ecomsense`)
+   - Any extra owners specified via `--owner <name>`
 3. **List Repositories**:
-   - For user: `gh repo list <user> --limit 1000 --json name,isFork,isArchived`
-   - For each org: `gh repo list <org> --limit 1000 --json name,isFork,isArchived`
+   - For each owner: `gh repo list <owner> --limit 1000 --json name,isFork,isArchived`
 4. **Local Path Structure**: `~/programs/<gitDomain>/<owner>/<repoName>/`
    - Example: `~/programs/github.com/pannet1/Scripts`
    - `<gitDomain>`: Fixed as `github.com`

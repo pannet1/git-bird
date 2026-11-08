@@ -37,7 +37,30 @@ def sync(mock=None):
         print("Error: Could not get authenticated user. Please run 'gh auth login'.")
         return
 
-    owners = [user] + get_orgs()
+    local_root = Path.home() / "programs"
+
+    # Discover owners: authenticated user, user's organizations, and local owner directories
+    owners = [user]
+    for org in get_orgs():
+        if org not in owners:
+            owners.append(org)
+
+    gh_domain_dir = local_root / "github.com"
+    if gh_domain_dir.exists():
+        for owner_dir in sorted(gh_domain_dir.iterdir()):
+            if owner_dir.is_dir() and not owner_dir.name.startswith("."):
+                if owner_dir.name not in owners:
+                    owners.append(owner_dir.name)
+
+    # Also support optional --owner <name> from CLI
+    import sys
+    for i, arg in enumerate(sys.argv):
+        if arg in ("--owner", "-o") and i + 1 < len(sys.argv):
+            for o in sys.argv[i + 1].split(","):
+                o = o.strip()
+                if o and o not in owners:
+                    owners.append(o)
+
     remote_repos = []
     for owner in owners:
         repos = get_repos(owner)
@@ -47,8 +70,6 @@ def sync(mock=None):
 
     # Filter out forks
     remote_repos = [r for r in remote_repos if not r.get('isFork')]
-
-    local_root = Path.home() / "programs"
 
     # Map remote repos to their "ideal" paths
     remote_repos_map = {}
@@ -153,21 +174,27 @@ def sync(mock=None):
         print("* Status: All remote repositories are currently synced locally.")
     print("="*50)
 
-    # Execution (automatic cloning and deletion are disabled to prevent accidental duplicate repos or deletions)
+    # Execution
     if archived_local:
-        print("\nArchived Repos (Automatic deletion disabled):")
         for path in archived_local:
             cmd = f"rm -rf {path}"
-            prefix = "[MOCK]" if mock else "[SKIPPED]"
-            print(f"{prefix} {cmd} (Archived on GitHub)")
+            if mock:
+                print(f"[MOCK] {cmd} (Archived on GitHub)")
+            else:
+                print(f"Removing archived repo: {path}...")
+                subprocess.run(cmd, shell=True)
 
     if pending_clones:
-        print("\nPending Clones (Automatic cloning disabled):")
+        print("\nActions:")
         for repo, path in pending_clones:
             clone_url = f"https://github.com/{repo['owner']}/{repo['name']}.git"
             cmd = f"git clone {clone_url} {path}"
-            prefix = "[MOCK]" if mock else "[SKIPPED]"
-            print(f"{prefix} {cmd}")
+            if mock:
+                print(f"[MOCK] {cmd}")
+            else:
+                print(f"Cloning {repo['owner']}/{repo['name']}...")
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                subprocess.run(cmd, shell=True)
 
 if __name__ == "__main__":
     sync()

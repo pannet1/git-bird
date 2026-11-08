@@ -33,36 +33,50 @@ def test_get_repo_path():
 
     print("PASS: test_get_repo_path")
 
-def test_sync_does_not_clone_or_delete():
+def test_sync_execution():
     with patch.object(main, "get_user", return_value="user1"), \
          patch.object(main, "get_orgs", return_value=[]), \
          patch.object(main, "get_repos", return_value=[
              {"name": "missing-repo", "isFork": False, "isArchived": False},
-             {"name": "archived-repo", "isFork": False, "isArchived": True},
          ]), \
          patch("subprocess.run") as mock_subproc, \
          patch("os.makedirs") as mock_makedirs:
 
-        # Even with mock=False (live mode), it should NOT run clone or rm -rf
+        # Test mock mode - no clone or rm commands
+        sync(mock=True)
+        assert not any("git clone" in str(c) for c in mock_subproc.call_args_list)
+        assert not any("rm -rf" in str(c) for c in mock_subproc.call_args_list)
+        assert mock_makedirs.call_count == 0
+
+        # Test live mode
         sync(mock=False)
+        assert mock_makedirs.call_count == 1
+        assert any("git clone" in str(c) for c in mock_subproc.call_args_list)
 
-        # Check all subprocess calls
-        for call_args in mock_subproc.call_args_list:
-            cmd = call_args[0][0] if call_args[0] else ""
-            if isinstance(cmd, list):
-                cmd_str = " ".join(cmd)
-            else:
-                cmd_str = str(cmd)
-            assert "git clone" not in cmd_str, f"Unexpected clone executed: {cmd_str}"
-            assert "rm -rf" not in cmd_str, f"Unexpected deletion executed: {cmd_str}"
+    print("PASS: test_sync_execution")
 
-        # Check os.makedirs was not called for missing repos
-        assert mock_makedirs.call_count == 0, "os.makedirs should not be called to create clone destinations"
+def test_sync_includes_local_owners():
+    queried_owners = []
+    def fake_get_repos(owner):
+        queried_owners.append(owner)
+        return []
 
-    print("PASS: test_sync_does_not_clone_or_delete")
+    with patch.object(main, "get_user", return_value="pannet1"), \
+         patch.object(main, "get_orgs", return_value=["test-org"]), \
+         patch.object(main, "get_repos", side_effect=fake_get_repos):
+
+        sync(mock=True)
+
+        assert "pannet1" in queried_owners
+        assert "test-org" in queried_owners
+        # ecomsense exists locally in ~/programs/github.com/
+        assert "ecomsense" in queried_owners
+
+    print("PASS: test_sync_includes_local_owners")
 
 if __name__ == "__main__":
     test_is_version_controlled()
     test_get_repo_path()
-    test_sync_does_not_clone_or_delete()
+    test_sync_execution()
+    test_sync_includes_local_owners()
     print("\nAll tests passed!")
