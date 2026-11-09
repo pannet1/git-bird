@@ -96,6 +96,23 @@ def test_sync_execution():
         assert mock_makedirs.call_count == 1
         assert any("git clone" in str(c) for c in mock_subproc.call_args_list)
 
+def test_orphaned_deletion_prompt():
+    with patch.object(main, "get_user", return_value="user1"), \
+         patch.object(main, "get_orgs", return_value=[]), \
+         patch.object(main, "get_repos", return_value=[]), \
+         patch("subprocess.run") as mock_subproc:
+
+        # Test mock mode: no deletions
+        sync(mock=True)
+        assert not any("rm -rf" in str(c) for c in mock_subproc.call_args_list)
+
+        # Test live mode declining orphaned deletion prompt
+        with patch("builtins.input", return_value="n"):
+            sync(mock=False)
+            assert not any("rm -rf" in str(c) for c in mock_subproc.call_args_list)
+
+    print("PASS: test_orphaned_deletion_prompt")
+
     print("PASS: test_sync_execution")
 
 def test_sync_includes_local_owners():
@@ -122,5 +139,6 @@ if __name__ == "__main__":
     test_get_repo_path()
     test_confirm()
     test_sync_execution()
+    test_orphaned_deletion_prompt()
     test_sync_includes_local_owners()
     print("\nAll tests passed!")

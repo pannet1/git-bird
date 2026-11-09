@@ -202,6 +202,21 @@ def sync(mock=None, yes=None):
                 else:
                     print(f"Skipped deletion of {path}.")
 
+    if orphaned_local:
+        if mock:
+            for path in orphaned_local:
+                cmd = f"rm -rf {path}"
+                print(f"[MOCK] {cmd} (Orphaned / not on GitHub)")
+        else:
+            print("\nOrphaned Repos (Not found on GitHub):")
+            for path in orphaned_local:
+                if confirm(f"Delete orphaned repo '{path}' (not on GitHub)? [y/N]: ", auto_yes=yes):
+                    cmd = f"rm -rf {path}"
+                    print(f"Removing orphaned repo: {path}...")
+                    subprocess.run(cmd, shell=True)
+                else:
+                    print(f"Skipped deletion of {path}.")
+
     if pending_clones:
         if mock:
             print("\nActions:")

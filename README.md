@@ -75,8 +75,9 @@ Repos live in a flat, language-agnostic layout:
 |------|----------|
 | **Forks** | Skipped — fork repos are not tracked. |
 | **Existing local content** | Never overwritten. If a folder exists at the target path (even without `.git`), it is left alone. |
-| **Archived repos** | Listed for removal; in live mode the local directory is deleted (`rm -rf`). |
-| **Pending clones** | `git clone` is run into the ideal path, creating parent directories as needed. |
+| **Archived repos** | Listed for removal; prompts `[y/N]` before deleting (`rm -rf`). |
+| **Orphaned repos** | Local repos not found on GitHub; prompts `[y/N]` before deleting (`rm -rf`). |
+| **Pending clones** | `git clone` is run into the ideal path (prompts `[y/N]` per repo), creating parent directories as needed. |
 
 ## Report Categories
 
