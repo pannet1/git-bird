@@ -32,7 +32,7 @@ This exposes a `sync` console-script entry point.
 ## Usage
 
 ```bash
-# Run a full sync (prompts [y/N] before cloning or deleting)
+# Run a full sync (prompts [y/N] for each repository before cloning or deleting)
 sync
 
 # Run a full sync without confirmation prompts

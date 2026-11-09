@@ -195,14 +195,12 @@ def sync(mock=None, yes=None):
         else:
             print("\nArchived Repos (Pending Deletion):")
             for path in archived_local:
-                print(f"   - {path}")
-            if confirm(f"Delete {len(archived_local)} archived repo(s)? [y/N]: ", auto_yes=yes):
-                for path in archived_local:
+                if confirm(f"Delete archived repo '{path}'? [y/N]: ", auto_yes=yes):
                     cmd = f"rm -rf {path}"
                     print(f"Removing archived repo: {path}...")
                     subprocess.run(cmd, shell=True)
-            else:
-                print("Skipped deletion of archived repos.")
+                else:
+                    print(f"Skipped deletion of {path}.")
 
     if pending_clones:
         if mock:
@@ -212,19 +210,17 @@ def sync(mock=None, yes=None):
                 cmd = f"git clone {clone_url} {path}"
                 print(f"[MOCK] {cmd}")
         else:
-            print("\nPending Clones:")
+            print("\nPending Clones (Individual Confirmation):")
             for repo, path in pending_clones:
-                print(f"   - {repo['owner']}/{repo['name']} -> {path}")
-            if confirm(f"Clone {len(pending_clones)} missing repo(s)? [y/N]: ", auto_yes=yes):
-                print("\nActions:")
-                for repo, path in pending_clones:
+                repo_name = f"{repo['owner']}/{repo['name']}"
+                if confirm(f"Clone '{repo_name}' to {path}? [y/N]: ", auto_yes=yes):
                     clone_url = f"https://github.com/{repo['owner']}/{repo['name']}.git"
                     cmd = f"git clone {clone_url} {path}"
-                    print(f"Cloning {repo['owner']}/{repo['name']}...")
+                    print(f"Cloning {repo_name}...")
                     os.makedirs(os.path.dirname(path), exist_ok=True)
                     subprocess.run(cmd, shell=True)
-            else:
-                print("Skipped cloning of missing repos.")
+                else:
+                    print(f"Skipped cloning {repo_name}.")
 
 if __name__ == "__main__":
     sync()

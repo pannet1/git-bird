@@ -22,7 +22,7 @@ Sync GitHub repositories for the authenticated user and their organizations to a
    - Clone remote repos missing locally to the target path (not just create folders)
    - Never overwrite existing local content
    - Skip existing local repos (no updates)
-   - Prompt user confirmation (`[y/N]`) before modifying local filesystem (cloning or deleting)
+   - Prompt user confirmation (`[y/N]`) individually for each repository before modifying local filesystem (cloning or deleting)
    - Use `git clone https://github.com/<owner>/<repo>.git` for cloning
 6. **Difference Report**:
    - Remote repos not present locally (pending clone)

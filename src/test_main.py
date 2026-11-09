@@ -74,6 +74,21 @@ def test_sync_execution():
             assert mock_makedirs.call_count == 1
             assert any("git clone" in str(c) for c in mock_subproc.call_args_list)
 
+        # Test live mode with multiple repos: accept one ('y'), decline one ('n')
+        mock_subproc.reset_mock()
+        mock_makedirs.reset_mock()
+        with patch.object(main, "get_repos", return_value=[
+                 {"name": "repo-yes", "isFork": False, "isArchived": False},
+                 {"name": "repo-no", "isFork": False, "isArchived": False},
+             ]), \
+             patch("builtins.input", side_effect=["y", "n"]):
+            sync(mock=False)
+            assert mock_makedirs.call_count == 1
+            cloned = [str(c) for c in mock_subproc.call_args_list if "git clone" in str(c)]
+            assert len(cloned) == 1
+            assert "repo-yes" in cloned[0]
+            assert "repo-no" not in cloned[0]
+
         # Test live mode with yes=True (auto-confirm)
         mock_subproc.reset_mock()
         mock_makedirs.reset_mock()
