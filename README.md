@@ -32,8 +32,11 @@ This exposes a `sync` console-script entry point.
 ## Usage
 
 ```bash
-# Run a full sync (clones missing repos, removes archived repos)
+# Run a full sync (prompts [y/N] before cloning or deleting)
 sync
+
+# Run a full sync without confirmation prompts
+sync -y
 
 # Dry-run mode — shows what would happen without making changes
 sync --mock
@@ -42,7 +45,8 @@ sync --mock
 Or run via Python directly:
 
 ```bash
-python -m src.main        # live sync
+python -m src.main        # live sync (prompts [y/N])
+python -m src.main -y     # live sync (auto-confirm)
 python -m src.main --mock # dry-run
 ```
 

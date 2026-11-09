@@ -27,10 +27,22 @@ def get_repos(owner):
 def get_repo_path(repo, owner):
     return Path.home() / "programs" / "github.com" / owner / repo['name']
 
-def sync(mock=None):
+def confirm(prompt_text, auto_yes=False):
+    if auto_yes:
+        return True
+    try:
+        response = input(prompt_text).strip().lower()
+        return response in ("y", "yes")
+    except (EOFError, KeyboardInterrupt):
+        print()
+        return False
+
+def sync(mock=None, yes=None):
+    import sys
     if mock is None:
-        import sys
         mock = "--mock" in sys.argv
+    if yes is None:
+        yes = "--yes" in sys.argv or "-y" in sys.argv
 
     user = get_user()
     if not user:
@@ -176,25 +188,43 @@ def sync(mock=None):
 
     # Execution
     if archived_local:
-        for path in archived_local:
-            cmd = f"rm -rf {path}"
-            if mock:
+        if mock:
+            for path in archived_local:
+                cmd = f"rm -rf {path}"
                 print(f"[MOCK] {cmd} (Archived on GitHub)")
+        else:
+            print("\nArchived Repos (Pending Deletion):")
+            for path in archived_local:
+                print(f"   - {path}")
+            if confirm(f"Delete {len(archived_local)} archived repo(s)? [y/N]: ", auto_yes=yes):
+                for path in archived_local:
+                    cmd = f"rm -rf {path}"
+                    print(f"Removing archived repo: {path}...")
+                    subprocess.run(cmd, shell=True)
             else:
-                print(f"Removing archived repo: {path}...")
-                subprocess.run(cmd, shell=True)
+                print("Skipped deletion of archived repos.")
 
     if pending_clones:
-        print("\nActions:")
-        for repo, path in pending_clones:
-            clone_url = f"https://github.com/{repo['owner']}/{repo['name']}.git"
-            cmd = f"git clone {clone_url} {path}"
-            if mock:
+        if mock:
+            print("\nActions:")
+            for repo, path in pending_clones:
+                clone_url = f"https://github.com/{repo['owner']}/{repo['name']}.git"
+                cmd = f"git clone {clone_url} {path}"
                 print(f"[MOCK] {cmd}")
+        else:
+            print("\nPending Clones:")
+            for repo, path in pending_clones:
+                print(f"   - {repo['owner']}/{repo['name']} -> {path}")
+            if confirm(f"Clone {len(pending_clones)} missing repo(s)? [y/N]: ", auto_yes=yes):
+                print("\nActions:")
+                for repo, path in pending_clones:
+                    clone_url = f"https://github.com/{repo['owner']}/{repo['name']}.git"
+                    cmd = f"git clone {clone_url} {path}"
+                    print(f"Cloning {repo['owner']}/{repo['name']}...")
+                    os.makedirs(os.path.dirname(path), exist_ok=True)
+                    subprocess.run(cmd, shell=True)
             else:
-                print(f"Cloning {repo['owner']}/{repo['name']}...")
-                os.makedirs(os.path.dirname(path), exist_ok=True)
-                subprocess.run(cmd, shell=True)
+                print("Skipped cloning of missing repos.")
 
 if __name__ == "__main__":
     sync()

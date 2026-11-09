@@ -3,10 +3,10 @@ import tempfile
 import shutil
 from pathlib import Path
 try:
-    from main import is_version_controlled, get_repo_path, sync
+    from main import is_version_controlled, get_repo_path, sync, confirm
     import main
 except ImportError:
-    from src.main import is_version_controlled, get_repo_path, sync
+    from src.main import is_version_controlled, get_repo_path, sync, confirm
     import src.main as main
 from unittest.mock import patch
 
@@ -33,6 +33,20 @@ def test_get_repo_path():
 
     print("PASS: test_get_repo_path")
 
+def test_confirm():
+    assert confirm("test", auto_yes=True) is True
+    with patch("builtins.input", return_value="y"):
+        assert confirm("test") is True
+    with patch("builtins.input", return_value="yes"):
+        assert confirm("test") is True
+    with patch("builtins.input", return_value="Y"):
+        assert confirm("test") is True
+    with patch("builtins.input", return_value="n"):
+        assert confirm("test") is False
+    with patch("builtins.input", return_value=""):
+        assert confirm("test") is False
+    print("PASS: test_confirm")
+
 def test_sync_execution():
     with patch.object(main, "get_user", return_value="user1"), \
          patch.object(main, "get_orgs", return_value=[]), \
@@ -48,8 +62,22 @@ def test_sync_execution():
         assert not any("rm -rf" in str(c) for c in mock_subproc.call_args_list)
         assert mock_makedirs.call_count == 0
 
-        # Test live mode
-        sync(mock=False)
+        # Test live mode with user answering 'n' (decline prompt)
+        with patch("builtins.input", return_value="n"):
+            sync(mock=False)
+            assert not any("git clone" in str(c) for c in mock_subproc.call_args_list)
+            assert mock_makedirs.call_count == 0
+
+        # Test live mode with user answering 'y' (accept prompt)
+        with patch("builtins.input", return_value="y"):
+            sync(mock=False)
+            assert mock_makedirs.call_count == 1
+            assert any("git clone" in str(c) for c in mock_subproc.call_args_list)
+
+        # Test live mode with yes=True (auto-confirm)
+        mock_subproc.reset_mock()
+        mock_makedirs.reset_mock()
+        sync(mock=False, yes=True)
         assert mock_makedirs.call_count == 1
         assert any("git clone" in str(c) for c in mock_subproc.call_args_list)
 
@@ -77,6 +105,7 @@ def test_sync_includes_local_owners():
 if __name__ == "__main__":
     test_is_version_controlled()
     test_get_repo_path()
+    test_confirm()
     test_sync_execution()
     test_sync_includes_local_owners()
     print("\nAll tests passed!")
